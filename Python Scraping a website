@@ -1,0 +1,71 @@
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.keys import Keys
+import time                                    
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.select import Select        
+import pandas as pd
+
+driver = webdriver.Chrome()
+URL = 'https://aco.net.au/Pages/Search/SearchProducts.aspx'
+driver.get(URL)
+time.sleep(1)
+
+search_key = driver.find_element(By.XPATH,'//*[@id="baseContent_mainContent_descriptionBox"]') #Find the SEARCH BOX
+search_key.send_keys('Herbs and Spices') #Key in the SEARCH BOX
+
+show_num_pages = driver.find_element(By.XPATH,'/html/body/form/div[3]/div/div/div[2]/div/div[1]/div/div[4]/div[2]/select')
+dd = Select(show_num_pages)
+dd.select_by_value("50") #DROPDOWN AND CHOOSE 50
+time.sleep(1)
+
+click_search = driver.find_element(By.XPATH,'/html/body/form/div[3]/div/div/div[2]/div/div[1]/div/div[5]/div[2]/input[1]')
+click_search.click()
+time.sleep(1)
+ 
+def export_table(r):
+    next_page = driver.find_element(By.XPATH,f'/html/body/form/div[3]/div/div/div[2]/div/div[1]/div/div[6]/table/tbody/tr[52]/td/table/tbody/tr/td[{r}]')
+    next_page.click()
+    time.sleep(1)
+    source_page = driver.page_source
+    html = BeautifulSoup(source_page,'lxml')
+    filter_to_table(html)
+
+row_data = []
+#LỌC DỮ LIỆU RA BẢNG EXCEL
+def filter_to_table(html):
+    table_data = html.find('table')
+    #print(table_data)
+    #small_table = table_data.find('table') #CÓ THỂ KHÔNG CẦN???
+    for row in table_data.find_all('tr')[:-2]: #không lấy 2 dòng cuối cùng chứa page_Webside "12345678910..."
+        col = row.find_all('td')
+        col = [ele.text.strip() for ele in col]
+        row_data.append(col)
+    df = pd.DataFrame(row_data,columns =['Operator','Category','Type','Product Name','Services','Content']) #thêm tên cột vào
+    new_df = df #.dropna()
+    new_df.to_excel('result2.xlsx')
+ 
+#export_table(1)
+ 
+ 
+ 
+for i in (range(1,9)):
+    if i==1:
+        x = 12
+        for r in range(1,x):
+            export_table(r)
+            # print(i,r)
+    elif i==8:
+        x = 12
+        for r in range(6,x):
+            export_table(r)
+            # print(i,r)
+    else:
+        for r in (range(3,13)):
+            export_table(r)
+            # print(i,r)
+driver.close()
+ 
+ 
+ 
+
