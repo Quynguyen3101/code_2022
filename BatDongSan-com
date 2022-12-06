@@ -1,0 +1,57 @@
+from selenium import webdriver
+from bs4 import BeautifulSoup
+import time
+from notifypy import Notify
+
+def extract_linkBDS():
+    with open ('BDS_search.txt','r',encoding='utf-8') as file1:
+        x = len(file1.readlines())
+    with open ('BDS_search.txt','r',encoding='utf-8') as file1:
+        lines = file1.readlines()
+        for i in range(1,x):
+            with open ('link_BDS.txt', 'a', encoding='utf-8') as link_bds:
+                link_bds.write(lines[4*i-2])
+            print(lines[4*i-2])
+
+
+
+def notifications():
+    notification = Notify()
+
+    notification.title = "BDS.COM"
+    notification.message = "Đã có cập nhật mới sau 30 giây ạ!"
+    notification.icon = "/Users/macbook/Desktop/Python/02_BDS_Python/bell.ico"
+    notification.application_name = 'THÔNG BÁO'
+    notification.send()
+    #time.sleep(5)
+
+
+while True:
+    driver = webdriver.Chrome()
+    url = 'https://batdongsan.com.vn/cho-thue-nha-rieng-quan-2'
+    driver.get(url)
+    html = driver.page_source 
+    soup = BeautifulSoup(html,'lxml')
+    full_infors = soup.find_all('a',class_ = 'js__product-link-for-product-id')
+    empty = []
+    #Xóa content trong txt file:
+    with open('BDS_search.txt', 'w',encoding='utf-8') as file:
+        pass
+    for full_infor in full_infors:
+        bds_name = full_infor.find('h3', class_ = 're__card-title').text.replace('\n  ','').replace('  ','').replace('\n','')
+        bds_price = full_infor.find('span', class_ = 're__card-config-price').text.replace(' triệu/tháng','')
+        bds_link = "https://batdongsan.com.vn"+full_infor['href']
+        try:
+            if float(bds_price) < 30:
+                with open('BDS_search.txt', 'a',encoding='utf-8') as file:
+                    file.write(f'Tên BDS: {bds_name} \n')
+                    file.write(f'Giá BDS: {bds_price}  triệu/tháng \n')
+                    file.write(f'Link BDS: {bds_link} \n')
+                    file.write('============== \n')
+        except ValueError:
+            pass
+    time.sleep(2)
+    driver.close()
+    notifications()
+    time.sleep(30)
+    
